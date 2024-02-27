@@ -1,0 +1,232 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+#include <boost/format.hpp>
+
+int main() {
+	class condition {
+		int id;
+		double value;
+		std::vector<double> coef;
+		std::vector<double> pre_exp;
+		std::vector<double> power_exp;
+	public:
+		condition() {
+			id = -1;
+			value = 0;
+		}
+		condition(int type) {
+			if (type == -1) {
+				id = -1;
+				value = 0;
+			}
+			if (type == 0) {
+				id = 0;
+				int p;
+				std::cout << "Введите степень многочлена предэкспоненты: ";
+				std::cin >> p;
+				pre_exp.resize(p + 1);
+				for (int i = p; i >= 0; i--) {
+					std::cout << "\tВведите коэффициент перед членом степени " << i << ": ";
+					std::cin >> pre_exp[i];
+				}
+				std::cout << "Введите степень многочлена степени экспоненты: ";
+				std::cin >> p;
+				power_exp.resize(p + 1);
+				for (int i = p; i >= 0; i--) {
+					std::cout << "\tВведите коэффициент перед членом степени " << i << ": ";
+					std::cin >> power_exp[i];
+				}
+			}
+			else if (type == 1) {
+				id = 1;
+				int p;
+				std::wcout << "Введите степень многочлена: ";
+				std::wcin >> p;
+				for (int i = p; i >= 0; i--) {
+					std::cout << "\tВведите коэффициент перед членом степени " << i << ": ";
+					std::cin >> coef[i];
+				}
+			}
+		}
+		void set_value(double v) {
+			value = v;
+		}
+		void change_condition(int type) {
+			if (type == 0) {
+				id = 0;
+				int p;
+				std::cout << "Введите степень многочлена предэкспоненты: ";
+				std::cin >> p;
+				pre_exp.resize(p + 1);
+				for (int i = p; i >= 0; i--) {
+					std::cout << "\tВведите коэффициент перед членом степени " << i << ": ";
+					std::cin >> pre_exp[i];
+				}
+				std::cout << "Введите степень многочлена степени экспоненты: ";
+				std::cin >> p;
+				power_exp.resize(p + 1);
+				for (int i = p; i >= 0; i--) {
+					std::cout << "\tВведите коэффициент перед членом степени " << i << ": ";
+					std::cin >> power_exp[i];
+				}
+			}
+			else if (type == 1) {
+				id = 1;
+				int p;
+				std::cout << "Введите степень многочлена: ";
+				std::cin >> p;
+				coef.resize(p + 1);
+				for (int i = p; i >= 0; i--) {
+					std::cout << "\tВведите коэффициент перед членом степени " << i << ": ";
+					std::cin >> coef[i];
+				}
+			}
+
+		}
+		double value_in_node(double x) {
+			if (id == -1) {
+				return value;
+			}
+			if (id == 0) {
+				double a, b;
+				a = 0;
+				b = 0;
+				for (int i = pre_exp.size() - 1; i >= 0; i--) {
+					a += pow(x, i) * pre_exp[i];
+				}
+				for (int i = power_exp.size() - 1; i >= 0; i--) {
+					b += pow(x, i) * power_exp[i];
+				}
+				return a * exp(b);
+			}
+			else if (id == 1) {
+				double a = 0;
+				for (int i = coef.size() - 1; i >= 0; i--) {
+					a += pow(x, i) * coef[i];
+				}
+				return a;
+			}
+		}
+		
+	};
+	class matrix {
+		std::vector<double> a;
+		std::vector<double> b;
+		std::vector<double> c;
+		std::vector<double> d;
+		std::vector<double> alpha;
+		std::vector<double> beta;
+		std::vector<double> u;
+	public:
+		matrix(int size_of_net, condition k, condition q, condition f, double E_1, double E_2, double D_1, double D_2)
+		{
+			double h, h_sqr;
+			h = 1 / double(size_of_net);
+			h_sqr = h*h;
+			a.resize(size_of_net + 1);
+			b.resize(size_of_net + 1);
+			c.resize(size_of_net + 1);
+			d.resize(size_of_net + 1);
+			alpha.resize(size_of_net);
+			beta.resize(size_of_net);
+			u.resize(size_of_net + 1);
+			a[0] = k.value_in_node(0);
+			b[0] = -k.value_in_node(0) - D_1 * h;
+			c[0] = 0;
+			d[0] = -E_1 * h;
+			alpha[0] = -a[0] / b[0];
+			beta[0] = d[0] / b[0];
+			a[size_of_net] = 0;
+			b[size_of_net] = -k.value_in_node(1) - D_2 * h;
+			c[size_of_net] = k.value_in_node(1);
+			d[size_of_net] = -E_2 * h;
+			for (int i = 1; i < size_of_net; i++) {
+				a[i] = k.value_in_node(1 * h * (i + 0.5));
+				b[i] = -(k.value_in_node(h * (i +0.5)) + k.value_in_node(h * (i - 0.5)) + q.value_in_node(h * i)*h_sqr);
+				c[i] = k.value_in_node(h * (i - 0.5));
+				d[i] = -f.value_in_node(h * i) * h_sqr;
+				alpha[i] = -a[i] / (b[i] + c[i] * alpha[i - 1]);
+				beta[i] = (d[i] - c[i] * beta[i - 1]) / (b[i] + c[i] * alpha[i - 1]);
+				}
+			u[size_of_net] = (d[size_of_net] - c[size_of_net] * beta[size_of_net - 1]) / (b[size_of_net] + c[size_of_net] * alpha[size_of_net - 1]);
+			for (int i = size_of_net - 1; i >= 0; i--) {
+				u[i] = alpha[i] * u[i + 1] + beta[i];
+			}
+		}
+		~matrix() {
+		}
+		double get_value(int i) {
+			return u[i];
+		}
+	
+	};
+	setlocale(LC_ALL, "Russian");
+	double k, q, f, C1, C2, lambda1, lambda2, delta1, delta2, epsilon1, epsilon2, u_chast;
+	int L;
+	std::cout << "Модельная задача:\nk = ";
+	std::cin >> k;
+	std::cout << "q = ";
+	std::cin >> q;
+	std::cout << "f = ";
+	std::cin >> f;
+	std::cout << "delta1 = ";
+	std::cin >> delta1;
+	std::cout << "delta2 = ";
+	std::cin >> delta2;
+	std::cout << "epsilon1 = ";
+	std::cin >> epsilon1;
+	std::cout << "epsilon2 = ";
+	std::cin >> epsilon2;
+	std::cout << "L = ";
+	std::cin >> L;
+	lambda1 = sqrt(q / k);
+	lambda2 = 0 - sqrt(q / k);
+	u_chast = f / q;
+	C1 = ((k * lambda2 + delta2)*(delta1*f - epsilon1*q)*exp(lambda2) + (k*lambda2 - delta1)*(delta2*f-epsilon2*q))/q/((k*lambda1 - delta1)*(k*lambda2 + delta2)*exp(lambda2)-(k*lambda2 - delta1)*(k*lambda1+delta2)*exp(lambda1));
+	C2 = ((k * lambda1 + delta2) * (delta1 * f - epsilon1 * q) * exp(lambda1) + (k * lambda1 - delta1) * (delta2 * f - epsilon2 * q)) / q / ((k * lambda2 - delta1) * (k * lambda1 + delta2) * exp(lambda1) - (k * lambda2 + delta2) * (k * lambda1 - delta1) * exp(lambda2));
+	std::vector<std::vector<double>> table;
+	table.resize(5);
+	table[0].resize(L + 1);
+	table[1].resize(L + 1);
+	table[2].resize(L + 1);
+	table[3].resize(L + 1);
+	table[4].resize(L + 1);
+	double x;
+	condition K(-1);
+	K.set_value(k);
+	condition Q(-1);
+	Q.set_value(q);
+	condition F(-1);
+	F.set_value(f);
+	matrix m(L, K, Q, F, epsilon1, epsilon2, delta1, delta2);
+	int type_K, type_Q, type_F;
+	std::cout << "Исследуемая задача:\nВведите вид первой функции (многочлен - 1, экспонента - 0, константа - -1): ";
+	std::cin >> type_K;
+	K.change_condition(type_K);
+	std::cout << "Введите вид второй функции (многочлен - 1, экспонента - 0, константа - -1): ";
+	std::cin >> type_Q;
+	Q.change_condition(type_Q);
+	std::cout << "Введите вид третьей функции (многочлен - 1, экспонента - 0, константа - -1): ";
+	std::cin >> type_F;
+	F.change_condition(type_F);
+	matrix M(L, K, Q, F, epsilon1, epsilon2, delta1, delta2);
+	std::cout << boost::format("%-5s %-8s %-8s %-8s %-8s\n") % 'x' % "[u]n" % "u_n" %"delta_u" %"U_n";
+	int part, n;
+	n = 0;
+	part = L / 10;
+	for (double i = 0; i < L + 1; i++) {
+		x = i / L;
+		table[0][i] = round(x * 100000) / 100000;
+		table[1][i] = round((C1 * exp(lambda1 * x) + C2 * exp(lambda2 * x) + u_chast) * 100000) / 100000;
+		table[2][i] = round(m.get_value(i) * 100000) / 100000;
+		table[3][i] = table[1][i] - table[2][i];
+		table[4][i] = round(M.get_value(i) * 100000) / 100000;
+		if (i == n * part) {
+			std::cout << boost::format("%-5s %-8s %-8s %-8s %-8s\n") % table[0][i] % table[1][i] % table[2][i] % table[3][i] % table[4][i];
+			n += 1;
+		}
+	}
+	return 0;
+}
